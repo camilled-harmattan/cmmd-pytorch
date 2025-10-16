@@ -55,7 +55,7 @@ Below, we report the CMMD metric for some popular pipelines on the COCO-30k data
 
 **Notes**:
 
-* For SDXL Turbo, `guidance_scale` is set to 0 following the [official guide](https://huggingface.co/docs/diffusers/main/en/using-diffusers/sdxl_turbo) in `diffusers`. 
+* For SDXL Turbo, `guidance_scale` is set to 0 following the [official guide](https://huggingface.co/docs/diffusers/main/en/using-diffusers/sdxl_turbo) in `diffusers`.
 * For all other pipelines, default `guidace_scale` was used. Refer to the official pipeline documentation pages [here](https://huggingface.co/docs/diffusers/main/en/index) for more details.
 
 > [!CAUTION]
@@ -63,7 +63,7 @@ Below, we report the CMMD metric for some popular pipelines on the COCO-30k data
 
 ## Obtaining CMMD for your pipelines
 
-One can refer to the `generate_images.py` script that generates images from the [COCO-30k randomly sampled captions](https://huggingface.co/datasets/sayakpaul/sample-datasets/raw/main/coco_30k_randomly_sampled_2014_val.csv) using `diffusers`. 
+One can refer to the `generate_images.py` script that generates images from the [COCO-30k randomly sampled captions](https://huggingface.co/datasets/sayakpaul/sample-datasets/raw/main/coco_30k_randomly_sampled_2014_val.csv) using `diffusers`.
 
 Once the images are generated, run:
 
@@ -84,5 +84,3 @@ python main.py None /path/to/generated/images ref_embed_file=ref_embs.npy --batc
 ## Acknowledgements
 
 Thanks to Sadeep Jayasumana (first author of CMMD) for all the helpful discussions.
-
-

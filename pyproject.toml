@@ -1,0 +1,54 @@
+[project]
+name = "cmmd_pytorch"
+version = "0.1.0"
+description = "Implementation of CMMD for image generation evaluation. Original codebase: https://github.com/google-research/google-research/tree/master/cmmd"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "transformers>=4.57.1",
+    "torch>=2.7.0",
+    "torchvision>=0.22.0, <0.24.0",
+    "absl-py>=2.3.1",
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu" },
+]
+torchvision = [
+    { index = "pytorch-cpu" },
+]
+
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta:__legacy__"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.isort]
+profile = "black"
+line_length = 79
+
+[tool.black]
+line-length = 79
+
+[tool.autopep8]
+max_line_length = 79
+in-place = true
+aggressive = 3
+
+[tool.mypy]
+disallow_untyped_defs = true
+ignore_missing_imports = true
+disable_error_code = ["index", "var-annotated", "has-type", "operator"]
+
+[tool.docformatter]
+wrap-summaries = 79
+wrap-descriptions = 79
+pre-summary-newline = true
+close-quotes-on-new-line = true
+make-summary-multi-line = true
+black = true

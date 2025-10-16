@@ -12,18 +12,33 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""IO utilities."""
+# Copyright (c) 2025 Harmattan AI.
+"""
+IO utilities.
+"""
 
 import glob
-from torch.utils.data import Dataset, DataLoader
+
 import numpy as np
-from PIL import Image
 import tqdm
+from PIL import Image
+from torch.utils.data import DataLoader, Dataset
+
+from cmmd_pytorch import embedding
 
 
 class CMMDDataset(Dataset):
-    def __init__(self, path, reshape_to, max_count=-1):
+    def __init__(
+        self, path: str, reshape_to: int, max_count: int = -1
+    ) -> None:
+        """
+        Initializes the CMMDDataset.
+
+        Args:
+            path: Path to the directory containing images.
+            reshape_to: The size to reshape the images to.
+            max_count: Maximum number of images to use.
+        """
         self.path = path
         self.reshape_to = reshape_to
 
@@ -33,10 +48,10 @@ class CMMDDataset(Dataset):
             img_path_list = img_path_list[:max_count]
         self.img_path_list = img_path_list
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.img_path_list)
 
-    def _get_image_list(self):
+    def _get_image_list(self) -> list[str]:
         ext_list = ["png", "jpg", "jpeg"]
         image_list = []
         for ext in ext_list:
@@ -46,23 +61,27 @@ class CMMDDataset(Dataset):
         image_list.sort()
         return image_list
 
-    def _center_crop_and_resize(self, im, size):
+    def _center_crop_and_resize(
+        self, im: Image.Image, size: int
+    ) -> Image.Image:
         w, h = im.size
-        l = min(w, h)
-        top = (h - l) // 2
-        left = (w - l) // 2
-        box = (left, top, left + l, top + l)
+        length = min(w, h)
+        top = (h - length) // 2
+        left = (w - length) // 2
+        box = (left, top, left + length, top + length)
         im = im.crop(box)
         # Note that the following performs anti-aliasing as well.
-        return im.resize((size, size), resample=Image.BICUBIC)  # pytype: disable=module-attr
+        return im.resize(
+            (size, size), resample=Image.BICUBIC
+        )  # pytype: disable=module-attr
 
-    def _read_image(self, path, size):
+    def _read_image(self, path: str, size: int) -> np.ndarray:
         im = Image.open(path)
         if size > 0:
             im = self._center_crop_and_resize(im, size)
         return np.asarray(im).astype(np.float32)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> np.ndarray:
         img_path = self.img_path_list[idx]
 
         x = self._read_image(img_path, self.reshape_to)
@@ -74,27 +93,35 @@ class CMMDDataset(Dataset):
 
 
 def compute_embeddings_for_dir(
-    img_dir,
-    embedding_model,
-    batch_size,
-    max_count=-1,
-):
-    """Computes embeddings for the images in the given directory.
+    img_dir: str,
+    embedding_model: embedding.ClipEmbeddingModel,
+    batch_size: int,
+    max_count: int = -1,
+) -> np.ndarray:
+    """
+    Computes embeddings for the images in the given directory.
 
     This drops the remainder of the images after batching with the provided
     batch_size to enable efficient computation on TPUs. This usually does not
     affect results assuming we have a large number of images in the directory.
 
     Args:
-      img_dir: Directory containing .jpg or .png image files.
-      embedding_model: The embedding model to use.
-      batch_size: Batch size for the embedding model inference.
-      max_count: Max number of images in the directory to use.
+        img_dir: Directory containing .jpg or .png image files.
+        embedding_model: The embedding model to use.
+        batch_size: Batch size for the embedding model inference.
+        max_count: Max number of images in the directory to use.
 
     Returns:
-      Computed embeddings of shape (num_images, embedding_dim).
+        Computed embeddings of shape (num_images, embedding_dim).
+
+    Raises:
+        ValueError: If any image values are not in the [0, 1] range.
     """
-    dataset = CMMDDataset(img_dir, reshape_to=embedding_model.input_image_size, max_count=max_count)
+    dataset = CMMDDataset(
+        img_dir,
+        reshape_to=embedding_model.input_image_size,
+        max_count=max_count,
+    )
     count = len(dataset)
     print(f"Calculating embeddings for {count} images from {img_dir}.")
 
@@ -109,7 +136,8 @@ def compute_embeddings_for_dir(
 
         if np.min(image_batch) < 0 or np.max(image_batch) > 1:
             raise ValueError(
-                "Image values are expected to be in [0, 1]. Found:" f" [{np.min(image_batch)}, {np.max(image_batch)}]."
+                "Image values are expected to be in [0, 1]. Found:"
+                f" [{np.min(image_batch)}, {np.max(image_batch)}]."
             )
 
         # Compute the embeddings using a pmapped function.

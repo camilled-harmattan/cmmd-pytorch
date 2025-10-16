@@ -1,0 +1,98 @@
+default_stages: [pre-commit]
+
+repos:
+  - repo: local
+    hooks:
+      - id: validate-commit-message
+        name: commit message starting with "build|config|docs|feat|fix|perf|refactor|style|test"
+        language: pygrep
+        entry: '^(build|config|docs|feat|fix|perf|refactor|style|test)!?(\([a-zA-Z0-9_-]+\))?: .*$'
+        args:
+          - '--multiline'
+          - '--negate'
+        stages:
+          - commit-msg
+
+  - repo: local
+    hooks:
+      - id: write-license-header
+        name: write license header
+        files: \.py$
+        language: system
+        entry: |
+          bash -c '
+          # loop over all arguments passed to the hook (including $0)
+          for file in $0 $@; do
+            file=$(echo "$file" | xargs)
+            # check if the file is a regular file
+            if [ ! -f "$file" ]; then
+              continue
+            fi
+            # check if the file is empty
+            if [ ! -s "$file" ]; then
+              continue
+            fi
+            # check if the file already has a license header
+            if grep -q "^# Copyright (c) [0-9]\{4\} Harmattan AI\.*$" "$file"; then
+              continue
+            fi
+            # find the first line that is not a comment
+            first_line=$(grep -n -m 1 -v "^#" "$file" | cut -d: -f1)
+            sed -i "${first_line}i# Copyright (c) $(date +%Y) Harmattan AI." "$file"
+            echo "Added license header to $file"
+          done
+          '
+
+  - repo: https://github.com/PyCQA/docformatter
+    rev: eb1df34
+    hooks:
+      - id: docformatter
+        additional_dependencies: [tomli]
+        args:
+          - '--in-place'
+          - '--config=./pyproject.toml'
+
+  - repo: 'https://github.com/psf/black'
+    rev: 25.1.0
+    hooks:
+      - id: black
+
+  - repo: 'https://github.com/PyCQA/isort'
+    rev: 6.0.0
+    hooks:
+      - id: isort
+
+  - repo: 'https://github.com/pre-commit/pre-commit-hooks'
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+
+  - repo: 'https://github.com/PyCQA/flake8'
+    rev: 7.1.2
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          - setuptools
+          - flake8-docstrings
+          - flake8-logging-format
+          - flake8-eradicate
+
+  - repo: 'https://github.com/pre-commit/mirrors-mypy'
+    rev: v1.15.0
+    hooks:
+      - id: mypy
+        args:
+          - '--pretty'
+        additional_dependencies:
+          - types-PyYAML>=6.0.2
+          - types-requests>=2.32.0
+
+  - repo: 'https://github.com/terrencepreilly/darglint'
+    rev: v1.8.1
+    hooks:
+      - id: darglint
+        args:
+          - '--message-template=''{msg_id}({msg}) at {path}:{line} - {obj}()'''
+          - '--docstring-style=google'

@@ -1,0 +1,4 @@
+[darglint]
+ignore_regex=_[A-Za-z].*
+docstring-style=google
+ignore_raise=NotImplementedError

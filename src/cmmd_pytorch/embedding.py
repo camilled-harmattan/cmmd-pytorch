@@ -12,46 +12,60 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# Copyright (c) 2025 Harmattan AI.
+"""
+Embedding models used in the CMMD calculation.
+"""
 
-"""Embedding models used in the CMMD calculation."""
-
-from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
-import torch
 import numpy as np
+import torch
+from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
 
 _CLIP_MODEL_NAME = "openai/clip-vit-large-patch14-336"
 _CUDA_AVAILABLE = torch.cuda.is_available()
 
 
-def _resize_bicubic(images, size):
+def _resize_bicubic(images: np.ndarray, size: int) -> torch.Tensor:
     images = torch.from_numpy(images.transpose(0, 3, 1, 2))
-    images = torch.nn.functional.interpolate(images, size=(size, size), mode="bicubic")
+    images = torch.nn.functional.interpolate(
+        images, size=(size, size), mode="bicubic"
+    )
     images = images.permute(0, 2, 3, 1).numpy()
     return images
 
 
 class ClipEmbeddingModel:
-    """CLIP image embedding calculator."""
+    """
+    CLIP image embedding calculator.
+    """
 
-    def __init__(self):
-        self.image_processor = CLIPImageProcessor.from_pretrained(_CLIP_MODEL_NAME)
+    def __init__(self) -> None:
+        """
+        Initializes the CLIP embedding model.
+        """
+        self.image_processor = CLIPImageProcessor.from_pretrained(
+            _CLIP_MODEL_NAME
+        )
 
-        self._model = CLIPVisionModelWithProjection.from_pretrained(_CLIP_MODEL_NAME).eval()
+        self._model = CLIPVisionModelWithProjection.from_pretrained(
+            _CLIP_MODEL_NAME
+        ).eval()
         if _CUDA_AVAILABLE:
             self._model = self._model.cuda()
 
         self.input_image_size = self.image_processor.crop_size["height"]
 
     @torch.no_grad()
-    def embed(self, images):
-        """Computes CLIP embeddings for the given images.
+    def embed(self, images: torch.Tensor) -> torch.Tensor:
+        """
+        Computes CLIP embeddings for the given images.
 
         Args:
-          images: An image array of shape (batch_size, height, width, 3). Values are
-            in range [0, 1].
+            images: An image tensor of shape (batch_size, height, width, 3).
+                Values are in range [0, 1].
 
         Returns:
-          Embedding array of shape (batch_size, embedding_width).
+            Embedding tensor of shape (batch_size, embedding_width).
         """
 
         images = _resize_bicubic(images, self.input_image_size)

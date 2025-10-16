@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+.vscode/
+
+# uv-specific ignores
+.python-version
+
+# build ignores
+build/
+dist/
+*.egg-info/
